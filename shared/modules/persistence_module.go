@@ -5,6 +5,7 @@ package modules
 import (
 	"github.com/pokt-network/pocket/persistence/kvstore"
 	"github.com/pokt-network/pocket/shared/messaging"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type PersistenceModule interface {
@@ -16,6 +17,8 @@ type PersistenceModule interface {
 	NewReadContext(height int64) (PersistenceReadContext, error)
 	GetBlockStore() kvstore.KVStore
 	NewWriteContext() PersistenceRWContext
+
+	HandleMessage(*anypb.Any) error
 
 	// Debugging / development only
 	HandleDebugMessage(*messaging.DebugMessage) error

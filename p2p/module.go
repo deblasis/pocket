@@ -6,6 +6,7 @@ import (
 
 	"github.com/pokt-network/pocket/p2p/raintree"
 	"github.com/pokt-network/pocket/p2p/stdnetwork"
+	"github.com/pokt-network/pocket/p2p/types"
 	typesP2P "github.com/pokt-network/pocket/p2p/types"
 	cryptoPocket "github.com/pokt-network/pocket/shared/crypto"
 	"github.com/pokt-network/pocket/shared/messaging"
@@ -158,6 +159,15 @@ func (m *p2pModule) Send(addr cryptoPocket.Address, msg *anypb.Any) error {
 	}
 
 	return m.network.NetworkSend(data, addr)
+}
+
+func (m *p2pModule) GetValidatorAddresses() []cryptoPocket.Address {
+	addrBook := m.network.GetAddrBook()
+	addresses := make([]cryptoPocket.Address, len(addrBook))
+	for i := 0; i < len(addrBook); i++ {
+		addresses[i] = []*types.NetworkPeer(addrBook)[i].Address
+	}
+	return addresses
 }
 
 func (*p2pModule) ValidateConfig(cfg modules.Config) error {

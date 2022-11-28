@@ -16,6 +16,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/pocket/consensus"
 	typesCons "github.com/pokt-network/pocket/consensus/types"
+	"github.com/pokt-network/pocket/p2p/types"
 	"github.com/pokt-network/pocket/runtime"
 	"github.com/pokt-network/pocket/runtime/test_artifacts"
 	"github.com/pokt-network/pocket/shared"
@@ -233,7 +234,7 @@ func WaitForNetworkConsensusMessages(
 	}
 
 	errorMessage := fmt.Sprintf("HotStuff step: %s, type: %s", typesCons.HotstuffStep_name[int32(step)], typesCons.HotstuffMessageType_name[int32(hotstuffMsgType)])
-	return waitForNetworkConsensusMessagesInternal(t, clock, testChannel, consensus.HotstuffMessageContentType, numMessages, millis, includeFilter, errorMessage)
+	return waitForNetworkConsensusMessagesInternal(t, clock, testChannel, messaging.HotstuffMessageContentType, numMessages, millis, includeFilter, errorMessage)
 }
 
 // IMPROVE(olshansky): Translate this to use generics.
@@ -256,13 +257,13 @@ loop:
 		select {
 		case testEvent := <-testChannel:
 			if testEvent.GetContentType() != messageContentType {
-				unused = append(unused, &testEvent)
+				unused = append(unused, testEvent)
 				continue
 			}
 
 			message := testEvent.Content
 			if message == nil || !includeFilter(message) {
-				unused = append(unused, &testEvent)
+				unused = append(unused, testEvent)
 				continue
 			}
 
@@ -289,7 +290,7 @@ loop:
 	}
 	cancel()
 	for _, u := range unused {
-		testChannel <- *u
+		testChannel <- u
 	}
 	return
 }
@@ -305,6 +306,7 @@ func basePersistenceMock(t *testing.T, _ modules.EventsChannel) *modulesMock.Moc
 	persistenceMock.EXPECT().Start().Return(nil).AnyTimes()
 	persistenceMock.EXPECT().SetBus(gomock.Any()).Return().AnyTimes()
 	persistenceMock.EXPECT().NewReadContext(int64(-1)).Return(persistenceContextMock, nil).AnyTimes()
+	persistenceMock.EXPECT().HandleMessage(&types.P2PAddressBookSnapshotMessage{}).AnyTimes()
 
 	// The persistence context should usually be accessed via the utility module within the context
 	// of the consensus module. This one is only used when loading the initial consensus module
@@ -326,16 +328,17 @@ func baseP2PMock(t *testing.T, testChannel modules.EventsChannel) *modulesMock.M
 		Broadcast(gomock.Any()).
 		Do(func(msg *anypb.Any) {
 			e := &messaging.PocketEnvelope{Content: msg}
-			testChannel <- *e
+			testChannel <- e
 		}).
 		AnyTimes()
 	p2pMock.EXPECT().
 		Send(gomock.Any(), gomock.Any()).
 		Do(func(addr cryptoPocket.Address, msg *anypb.Any) {
 			e := &messaging.PocketEnvelope{Content: msg}
-			testChannel <- *e
+			testChannel <- e
 		}).
 		AnyTimes()
+	p2pMock.EXPECT().GetValidatorAddresses().AnyTimes()
 
 	return p2pMock
 }

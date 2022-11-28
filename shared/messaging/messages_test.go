@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pokt-network/pocket/consensus"
 	typesCons "github.com/pokt-network/pocket/consensus/types"
 	"github.com/pokt-network/pocket/shared/messaging"
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,7 @@ func TestPocketEnvelope_GetContentType(t *testing.T) {
 		},
 		{
 			msg:             &typesCons.HotstuffMessage{},
-			wantContentType: consensus.HotstuffMessageContentType,
+			wantContentType: messaging.HotstuffMessageContentType,
 		},
 	}
 	for _, tt := range tests {

@@ -8,7 +8,8 @@ import (
 
 	consensusTelemetry "github.com/pokt-network/pocket/consensus/telemetry"
 	typesCons "github.com/pokt-network/pocket/consensus/types"
-
+	"github.com/pokt-network/pocket/p2p/types"
+	"github.com/pokt-network/pocket/shared/messaging"
 	"github.com/pokt-network/pocket/shared/modules"
 )
 
@@ -205,6 +206,8 @@ func (p *paceMaker) InterruptRound() {
 func (p *paceMaker) NewHeight() {
 	p.consensusMod.nodeLog(typesCons.PacemakerNewHeight(p.consensusMod.CurrentHeight() + 1))
 
+	p.broadcastAddressesForHeight()
+
 	p.consensusMod.Height++
 	p.consensusMod.resetForNewHeight()
 
@@ -217,6 +220,22 @@ func (p *paceMaker) NewHeight() {
 		CounterIncrement(
 			consensusTelemetry.CONSENSUS_BLOCKCHAIN_HEIGHT_COUNTER_NAME,
 		)
+}
+
+func (p *paceMaker) broadcastAddressesForHeight() {
+	addrs := p.GetBus().GetP2PModule().GetValidatorAddresses()
+	addrsBytes := make([][]byte, len(addrs))
+	for i := 0; i < len(addrs); i++ {
+		addrsBytes[i] = addrs[i].Bytes()
+	}
+	p2pAddressBookSnapshotMessage, err := messaging.PackMessage(&types.P2PAddressBookSnapshotMessage{
+		Height:    p.consensusMod.CurrentHeight(),
+		Addresses: addrsBytes,
+	})
+	if err != nil {
+		log.Fatalf("[ERROR] Failed to create pack P2PAddressBookSnapshotMessage message: %v", err)
+	}
+	p.GetBus().PublishEventToBus(p2pAddressBookSnapshotMessage)
 }
 
 func (p *paceMaker) startNextView(qc *typesCons.QuorumCertificate, forceNextView bool) {

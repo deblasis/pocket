@@ -3,7 +3,10 @@ package messaging
 import "strings"
 
 const (
-	DebugMessageEventType = "pocket.DebugMessage"
+	DebugMessageEventType                    = "pocket.DebugMessage"
+	HotstuffMessageContentType               = "consensus.HotstuffMessage"
+	UtilityMessageContentType                = "consensus.UtilityMessage"
+	P2PAddressBookSnapshotMessageContentType = "p2p.P2PAddressBookSnapshotMessage"
 )
 
 func (x *PocketEnvelope) GetContentType() string {

@@ -152,10 +152,27 @@ func (node *Node) handleEvent(message *messaging.PocketEnvelope) error {
 	switch contentType {
 	case messaging.NodeStartedEventType:
 		log.Println("[NOOP] Received NodeStartedEvent")
-	case consensus.HotstuffMessageContentType:
+	case messaging.HotstuffMessageContentType:
 		return node.GetBus().GetConsensusModule().HandleMessage(message.Content)
 	case messaging.DebugMessageEventType:
 		return node.handleDebugMessage(message)
+	case messaging.P2PAddressBookSnapshotMessageContentType:
+		return node.GetBus().GetPersistenceModule().HandleMessage(message.Content)
+		// log.Println("[NOOP] Received P2PAddressBookSnapshotMessageContentType")
+		// msg, err := codec.GetCodec().FromAny(message.Content)
+		// if err != nil {
+		// 	return err
+		// }
+		// p2pAddressBookSnapshotMessage, ok := msg.(*types.P2PAddressBookSnapshotMessage)
+		// if !ok {
+		// 	return fmt.Errorf("failed to cast message to p2pAddressBookSnapshotMessage")
+		// }
+		// fmt.Printf("p2pAddressBookSnapshotMessage: %v\n", p2pAddressBookSnapshotMessage)
+
+		// addrs := p2pAddressBookSnapshotMessage.Addresses
+		// for i := 0; i < len(addrs); i++ {
+		// 	fmt.Printf("cryptoPocket.Address(addrs[i]).String(): %v\n", cryptoPocket.Address(addrs[i]).String())
+		// }
 	default:
 		log.Printf("[WARN] Unsupported message content type: %s \n", contentType)
 	}

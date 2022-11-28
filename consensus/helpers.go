@@ -26,9 +26,6 @@ const (
 	Vote    = typesCons.HotstuffMessageType_HOTSTUFF_MESSAGE_VOTE
 
 	ByzantineThreshold = float64(2) / float64(3)
-
-	HotstuffMessageContentType = "consensus.HotstuffMessage"
-	UtilityMessageContentType  = "consensus.UtilityMessage"
 )
 
 var (

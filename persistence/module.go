@@ -6,11 +6,15 @@ import (
 	"log"
 
 	"github.com/pokt-network/pocket/persistence/indexer"
+	"google.golang.org/protobuf/types/known/anypb"
 
+	p2pTypes "github.com/pokt-network/pocket/p2p/types"
 	"github.com/pokt-network/pocket/persistence/types"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/pokt-network/pocket/persistence/kvstore"
+	"github.com/pokt-network/pocket/shared/codec"
+	"github.com/pokt-network/pocket/shared/messaging"
 	"github.com/pokt-network/pocket/shared/modules"
 )
 
@@ -207,8 +211,34 @@ func initializeBlockStore(blockStorePath string) (kvstore.KVStore, error) {
 	return kvstore.NewKVStore(blockStorePath)
 }
 
+func (m *persistenceModule) HandleMessage(message *anypb.Any) error {
+	switch message.MessageName() {
+	case messaging.P2PAddressBookSnapshotMessageContentType:
+		msg, err := codec.GetCodec().FromAny(message)
+		if err != nil {
+			return err
+		}
+		p2pAddressBookSnapshotMessage, ok := msg.(*p2pTypes.P2PAddressBookSnapshotMessage)
+		if !ok {
+			return fmt.Errorf("failed to cast message to P2PAddressBookSnapshotMessage")
+		}
+
+		ctx, err := m.NewRWContext(int64(p2pAddressBookSnapshotMessage.Height))
+		if err != nil {
+			return err
+		}
+		defer ctx.Release()
+
+	default:
+		return types.ErrUnknownMessage(message.MessageName())
+	}
+
+	return nil
+}
+
 // HACK(olshansky): Simplify and externalize the logic for whether genesis should be populated and
-//                  move the if logic out of this file.
+//
+//	move the if logic out of this file.
 func (m *persistenceModule) shouldHydrateGenesisDb() (bool, error) {
 	checkContext, err := m.NewReadContext(-1)
 	if err != nil {

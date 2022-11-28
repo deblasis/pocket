@@ -10,6 +10,7 @@ import (
 	typesCons "github.com/pokt-network/pocket/consensus/types"
 	"github.com/pokt-network/pocket/shared/codec"
 	cryptoPocket "github.com/pokt-network/pocket/shared/crypto"
+	"github.com/pokt-network/pocket/shared/messaging"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	consensusTelemetry "github.com/pokt-network/pocket/consensus/telemetry"
@@ -235,7 +236,7 @@ func (m *consensusModule) HandleMessage(message *anypb.Any) error {
 	m.m.Lock()
 	defer m.m.Unlock()
 	switch message.MessageName() {
-	case HotstuffMessageContentType:
+	case messaging.HotstuffMessageContentType:
 		msg, err := codec.GetCodec().FromAny(message)
 		if err != nil {
 			return err
@@ -247,7 +248,7 @@ func (m *consensusModule) HandleMessage(message *anypb.Any) error {
 		if err := m.handleHotstuffMessage(hotstuffMessage); err != nil {
 			return err
 		}
-	case UtilityMessageContentType:
+	case messaging.UtilityMessageContentType:
 		panic("[WARN] UtilityMessage handling is not implemented by consensus yet...")
 	default:
 		return typesCons.ErrUnknownConsensusMessageType(message.MessageName())
